@@ -1,0 +1,24 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - ./storage:/app/storage
+      - ./plaud.db:/app/plaud.db
+      - ./frontend:/app/frontend
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - WHISPER_MODEL=${WHISPER_MODEL:-large-v3}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
+      - PORT=${PORT:-8000}
+      - STORAGE_DIR=/app/storage/audio
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
