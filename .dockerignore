@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.py[cod]
+.env
+plaud.db
+storage/audio/
+*.pem
+*.crt
+*.key
+.git/
+.claude/
+memory/
