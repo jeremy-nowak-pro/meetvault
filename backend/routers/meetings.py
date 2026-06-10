@@ -39,14 +39,15 @@ async def list_meetings(project_id: Optional[int] = None, db: AsyncSession = Dep
 @router.post("/upload")
 async def upload_meeting(
     background_tasks: BackgroundTasks,
-    project_id: int = Form(...),
+    client_id: int = Form(...),
     title: Optional[str] = Form(None),
     audio: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Projet introuvable")
+    from backend.models import Client
+    client = await db.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client introuvable")
 
     os.makedirs(STORAGE_DIR, exist_ok=True)
     uid = str(uuid.uuid4())
@@ -57,7 +58,6 @@ async def upload_meeting(
         content = await audio.read()
         f.write(content)
 
-    # Conversion en WAV 16kHz mono (format optimal pour Whisper)
     import subprocess
     subprocess.run(
         ["ffmpeg", "-y", "-i", raw_path, "-ar", "16000", "-ac", "1", audio_path],
@@ -66,7 +66,7 @@ async def upload_meeting(
     os.remove(raw_path)
 
     meeting = Meeting(
-        project_id=project_id,
+        client_id=client_id,
         title=title or f"RDV {datetime.now().strftime('%d/%m/%Y')}",
         audio_path=audio_path,
         status="uploaded",
@@ -91,7 +91,7 @@ async def get_meeting(meeting_id: int, db: AsyncSession = Depends(get_db)):
 
     return {
         "id": meeting.id,
-        "project_id": meeting.project_id,
+        "client_id": meeting.client_id,
         "title": meeting.title,
         "recorded_at": meeting.recorded_at,
         "duration_seconds": meeting.duration_seconds,
@@ -145,8 +145,8 @@ async def export_meeting(meeting_id: int, db: AsyncSession = Depends(get_db)):
     if not meeting:
         raise HTTPException(status_code=404, detail="RDV introuvable")
 
-    project = await db.get(Project, meeting.project_id)
-    client = await db.get(Client, project.client_id) if project else None
+    client = await db.get(Client, meeting.client_id) if meeting.client_id else None
+    project = await db.get(Project, meeting.project_id) if meeting.project_id else None
 
     meeting_dict = {
         "id": meeting.id,

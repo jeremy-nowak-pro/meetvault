@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enregistrement — plaud-local</title>
+  <title>Enregistrement — MeetVault</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * { font-family: 'Inter', sans-serif; }
-
     body {
       min-height: 100vh;
       background: linear-gradient(135deg, #fdf8f2 0%, #f5ede0 50%, #ede4d3 100%);
       background-attachment: fixed;
     }
-
     .glass {
       background: rgba(255,255,255,0.45);
       backdrop-filter: blur(20px);
@@ -23,89 +21,67 @@
       border: 1px solid rgba(255,255,255,0.65);
       box-shadow: 0 4px 24px rgba(180,150,100,0.10);
     }
-
     .glass-header {
       background: rgba(253,248,242,0.70);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-bottom: 1px solid rgba(255,255,255,0.60);
     }
-
     .text-main { color: #2d2010; }
     .text-sub  { color: #7c6a50; }
-    .accent    { color: #c2784a; }
-
-    input, select {
+    input {
       background: rgba(255,255,255,0.60);
       border: 1px solid rgba(255,255,255,0.80);
       color: #2d2010;
     }
-    input:focus, select:focus {
+    input:focus {
       outline: none;
       border-color: #c2784a;
       box-shadow: 0 0 0 3px rgba(194,120,74,0.12);
     }
     input::placeholder { color: #b0997e; }
-    select option { background: #fdf8f2; color: #2d2010; }
-
-    /* Bouton Record */
     .btn-record {
       width: 140px; height: 140px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #ef5350, #b71c1c);
-      box-shadow:
-        0 0 0 0 rgba(220,38,38,0.25),
-        0 8px 32px rgba(220,38,38,0.30),
-        inset 0 1px 0 rgba(255,255,255,0.15);
+      box-shadow: 0 0 0 0 rgba(220,38,38,0.25), 0 8px 32px rgba(220,38,38,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
       transition: all 0.2s ease;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
     }
-    .btn-record:hover {
-      box-shadow: 0 0 0 12px rgba(220,38,38,0.10), 0 8px 32px rgba(220,38,38,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
-      transform: scale(1.03);
-    }
+    .btn-record:hover { box-shadow: 0 0 0 12px rgba(220,38,38,0.10), 0 8px 32px rgba(220,38,38,0.30), inset 0 1px 0 rgba(255,255,255,0.15); transform: scale(1.03); }
     .btn-record:active { transform: scale(0.97); }
-    .btn-record.recording {
-      animation: pulse-ring 1.5s ease-out infinite;
-      background: radial-gradient(circle at 35% 35%, #dc2626, #991b1b);
-    }
+    .btn-record.recording { animation: pulse-ring 1.5s ease-out infinite; background: radial-gradient(circle at 35% 35%, #dc2626, #991b1b); }
     @keyframes pulse-ring {
       0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.4), 0 8px 32px rgba(220,38,38,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
       70%  { box-shadow: 0 0 0 24px rgba(220,38,38,0), 0 8px 32px rgba(220,38,38,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
       100% { box-shadow: 0 0 0 0 rgba(220,38,38,0), 0 8px 32px rgba(220,38,38,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
     }
-
-    .btn-record.disabled {
-      background: radial-gradient(circle at 35% 35%, #d4c4b0, #b8a898);
-      box-shadow: none;
-      cursor: default;
-      animation: none;
-    }
+    .btn-record.disabled { background: radial-gradient(circle at 35% 35%, #d4c4b0, #b8a898); box-shadow: none; cursor: default; animation: none; }
   </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
   <header class="glass-header px-5 py-4 flex items-center gap-3 sticky top-0 z-20">
-    <a href="/" class="w-8 h-8 glass rounded-full flex items-center justify-center text-sub hover:opacity-70 transition-opacity">
+    <a id="back-link" href="/" class="w-8 h-8 glass rounded-full flex items-center justify-center text-sub hover:opacity-70 transition-opacity">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
-    <h1 class="font-semibold text-main text-base">Nouveau RDV</h1>
+    <div class="flex-1 min-w-0">
+      <h1 class="font-semibold text-main text-base">Nouveau RDV</h1>
+      <p id="client-label" class="text-xs text-sub truncate"></p>
+    </div>
   </header>
 
   <main class="flex-1 flex flex-col items-center justify-between px-6 py-8 gap-8 max-w-sm mx-auto w-full">
 
-    <!-- Sélecteurs -->
-    <div class="w-full space-y-3">
-      <select id="select-project" class="w-full rounded-xl px-4 py-3 text-sm backdrop-blur-sm appearance-none">
-        <option value="">Sélectionner un projet...</option>
-      </select>
+    <!-- Titre optionnel -->
+    <div class="w-full">
       <input id="input-title" type="text" placeholder="Titre du RDV (optionnel)" class="w-full rounded-xl px-4 py-3 text-sm backdrop-blur-sm">
     </div>
 
-    <!-- Zone enregistrement -->
+    <!-- Bouton enregistrement -->
     <div class="flex flex-col items-center gap-6">
       <button id="btn-record" class="btn-record" onclick="toggleRecord()">
         <svg id="icon-mic" class="w-14 h-14 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
@@ -121,13 +97,12 @@
         <div id="status-text" class="text-sub text-sm">Appuyez pour démarrer</div>
       </div>
 
-      <!-- Volume -->
       <div id="volume-bar" class="hidden w-48 h-1.5 bg-white/50 rounded-full overflow-hidden">
         <div id="volume-fill" class="h-full bg-[#dc2626]/70 rounded-full transition-all duration-75" style="width:0%"></div>
       </div>
     </div>
 
-    <!-- Upload fichier -->
+    <!-- Import fichier -->
     <div class="w-full glass rounded-2xl p-5">
       <p class="text-sub text-xs text-center mb-3 font-medium uppercase tracking-wider">Ou importer un fichier</p>
       <label class="flex items-center justify-center gap-2 cursor-pointer group">
@@ -142,34 +117,21 @@
 
   </main>
 
-  <!-- Toast -->
   <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 glass px-5 py-3 rounded-full text-sm text-main shadow-lg z-50"></div>
 
   <script>
     let mediaRecorder = null, audioChunks = [], timerInterval = null, analyserInterval = null, seconds = 0;
+    const params = new URLSearchParams(window.location.search);
+    const clientId = params.get('client_id');
 
-    async function loadProjects() {
+    async function init() {
+      if (!clientId) { window.location.href = '/'; return; }
       const res = await fetch('/api/clients');
       const clients = await res.json();
-      const select = document.getElementById('select-project');
-      const params = new URLSearchParams(window.location.search);
-      const preselect = params.get('project_id');
-
-      for (const client of clients) {
-        const res2 = await fetch(`/api/clients/${client.id}/projects`);
-        const projects = await res2.json();
-        if (!projects.length) continue;
-        const group = document.createElement('optgroup');
-        group.label = client.name;
-        for (const p of projects) {
-          const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = p.name;
-          if (preselect && String(p.id) === preselect) opt.selected = true;
-          group.appendChild(opt);
-        }
-        select.appendChild(group);
-      }
+      const client = clients.find(c => String(c.id) === clientId);
+      if (!client) { window.location.href = '/'; return; }
+      document.getElementById('client-label').textContent = client.name + (client.company ? ' · ' + client.company : '');
+      document.getElementById('back-link').href = '/';
     }
 
     async function toggleRecord() {
@@ -178,10 +140,7 @@
     }
 
     async function startRecording() {
-      if (!document.getElementById('select-project').value) {
-        showToast('Sélectionnez un projet avant d\'enregistrer');
-        return;
-      }
+      if (!clientId) { showToast('Client manquant'); return; }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
@@ -241,7 +200,7 @@
       const blob = new Blob(audioChunks, { type: 'audio/webm' });
       const fd = new FormData();
       fd.append('audio', blob, `rdv_${Date.now()}.webm`);
-      fd.append('project_id', document.getElementById('select-project').value);
+      fd.append('client_id', clientId);
       const title = document.getElementById('input-title').value.trim();
       if (title) fd.append('title', title);
       try {
@@ -257,13 +216,11 @@
     async function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const projectId = document.getElementById('select-project').value;
-      if (!projectId) { showToast('Sélectionnez un projet avant d\'importer'); return; }
       document.getElementById('file-name').textContent = file.name;
       document.getElementById('status-text').textContent = 'Upload en cours...';
       const fd = new FormData();
       fd.append('audio', file, file.name);
-      fd.append('project_id', projectId);
+      fd.append('client_id', clientId);
       const title = document.getElementById('input-title').value.trim();
       if (title) fd.append('title', title);
       try {
@@ -283,7 +240,7 @@
       setTimeout(() => el.classList.add('hidden'), 3000);
     }
 
-    loadProjects();
+    init();
   </script>
 </body>
 </html>

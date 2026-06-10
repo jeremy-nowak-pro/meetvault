@@ -4,7 +4,7 @@ from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
 from backend.database import get_db
-from backend.models import Client, Project
+from backend.models import Client, Project, Meeting
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
@@ -24,16 +24,22 @@ class ProjectCreate(BaseModel):
 async def list_clients(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Client).order_by(Client.name))
     clients = result.scalars().all()
-    return [
-        {
+
+    client_list = []
+    for c in clients:
+        result_count = await db.execute(
+            select(Meeting).where(Meeting.client_id == c.id)
+        )
+        meeting_count = len(result_count.scalars().all())
+        client_list.append({
             "id": c.id,
             "name": c.name,
             "company": c.company,
             "email": c.email,
             "created_at": c.created_at,
-        }
-        for c in clients
-    ]
+            "meeting_count": meeting_count,
+        })
+    return client_list
 
 
 @router.post("")
@@ -42,8 +48,42 @@ async def create_client(data: ClientCreate, db: AsyncSession = Depends(get_db)):
     db.add(client)
     await db.commit()
     await db.refresh(client)
-    return {"id": client.id, "name": client.name}
+    return {"id": client.id, "name": client.name, "company": client.company, "meeting_count": 0}
 
+
+@router.get("/{client_id}/meetings")
+async def list_client_meetings(client_id: int, db: AsyncSession = Depends(get_db)):
+    client = await db.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client introuvable")
+    result = await db.execute(
+        select(Meeting).where(Meeting.client_id == client_id).order_by(Meeting.recorded_at.desc())
+    )
+    meetings = result.scalars().all()
+    return [
+        {
+            "id": m.id,
+            "title": m.title,
+            "recorded_at": m.recorded_at,
+            "duration_seconds": m.duration_seconds,
+            "status": m.status,
+            "error_message": m.error_message,
+        }
+        for m in meetings
+    ]
+
+
+@router.delete("/{client_id}")
+async def delete_client(client_id: int, db: AsyncSession = Depends(get_db)):
+    client = await db.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client introuvable")
+    await db.delete(client)
+    await db.commit()
+    return {"ok": True}
+
+
+# --- Kept for backward compatibility ---
 
 @router.get("/{client_id}/projects")
 async def list_projects(client_id: int, db: AsyncSession = Depends(get_db)):
@@ -64,16 +104,6 @@ async def create_project(client_id: int, data: ProjectCreate, db: AsyncSession =
     await db.commit()
     await db.refresh(project)
     return {"id": project.id, "name": project.name}
-
-
-@router.delete("/{client_id}")
-async def delete_client(client_id: int, db: AsyncSession = Depends(get_db)):
-    client = await db.get(Client, client_id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client introuvable")
-    await db.delete(client)
-    await db.commit()
-    return {"ok": True}
 
 
 @router.delete("/{client_id}/projects/{project_id}")

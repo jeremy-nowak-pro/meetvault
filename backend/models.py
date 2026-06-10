@@ -15,6 +15,7 @@ class Client(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     projects: Mapped[list["Project"]] = relationship(back_populates="client", cascade="all, delete-orphan")
+    meetings: Mapped[list["Meeting"]] = relationship(back_populates="client", cascade="all, delete-orphan")
 
 
 class Project(Base):
@@ -27,35 +28,32 @@ class Project(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     client: Mapped["Client"] = relationship(back_populates="projects")
-    meetings: Mapped[list["Meeting"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    meetings: Mapped[list["Meeting"]] = relationship(back_populates="project")
 
 
 class Meeting(Base):
     __tablename__ = "meetings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    client_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clients.id"), nullable=True)
+    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id"), nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String(200))
     recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     duration_seconds: Mapped[Optional[int]] = mapped_column(Integer)
     audio_path: Mapped[Optional[str]] = mapped_column(String(500))
 
-    # Pipeline status
     status: Mapped[str] = mapped_column(String(50), default="uploaded")
-    # uploaded → transcribing → diarizing → analyzing → done | error
 
-    # Résultats pipeline
-    transcript_raw: Mapped[Optional[str]] = mapped_column(Text)      # JSON segments Whisper
-    transcript_diarized: Mapped[Optional[str]] = mapped_column(Text)  # JSON segments avec locuteur
-    analysis: Mapped[Optional[str]] = mapped_column(Text)             # JSON analyse Ollama
-
-    # Noms des locuteurs (assignés manuellement ou auto)
-    speakers: Mapped[Optional[str]] = mapped_column(Text)  # JSON {"SPEAKER_00": "Jérémy", ...}
+    transcript_raw: Mapped[Optional[str]] = mapped_column(Text)
+    transcript_diarized: Mapped[Optional[str]] = mapped_column(Text)
+    analysis: Mapped[Optional[str]] = mapped_column(Text)
+    speakers: Mapped[Optional[str]] = mapped_column(Text)
 
     error_message: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    project: Mapped["Project"] = relationship(back_populates="meetings")
+    client: Mapped[Optional["Client"]] = relationship(back_populates="meetings")
+    project: Mapped[Optional["Project"]] = relationship(back_populates="meetings")
 
 
 class DeviceToken(Base):
