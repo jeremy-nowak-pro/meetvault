@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>plaud-local</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+    :root {
+      --accent:     #6ec0a8;
+      --accent-dim: rgba(110,192,168,0.16);
+      --accent-bd:  rgba(110,192,168,0.24);
+      --bg:         #0e1116;
+      --card:       rgba(255,255,255,0.055);
+      --card-bd:    rgba(255,255,255,0.08);
+      --txt:        rgba(255,255,255,0.88);
+      --txt-sub:    rgba(255,255,255,0.36);
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 65% 50% at 0% 0%,   rgba(40,60,80,0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(30,50,65,0.35) 0%, transparent 50%),
+        var(--bg);
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    /* ── SPLASH ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    #splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .splash-card {
+      width: 148px; height: 148px; border-radius: 38px;
+      background: var(--card);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid var(--card-bd);
+      box-shadow: 0 32px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.10);
+      display: flex; align-items: center; justify-content: center;
+      animation: splash-in 2.4s cubic-bezier(0.4,0,0.2,1) forwards;
+      transform-style: preserve-3d;
+    }
+    @keyframes splash-in {
+      0%   { opacity:0; transform: perspective(900px) rotateY(-40deg) rotateX(12deg) scale(0.75); }
+      38%  { opacity:1; transform: perspective(900px) rotateY(6deg) rotateX(-3deg) scale(1.03); }
+      65%  { opacity:1; transform: perspective(900px) rotateY(-2deg) rotateX(1deg) scale(1); }
+      85%  { opacity:1; transform: perspective(900px) rotateY(0) rotateX(0) scale(1); }
+      100% { opacity:0; transform: perspective(900px) rotateY(0) rotateX(0) scale(1.1); }
+    }
+
+    .splash-title {
+      position: absolute; bottom: calc(50% - 114px);
+      font-size: 0.875rem; font-weight: 500; letter-spacing: 0.06em;
+      color: var(--txt-sub);
+      animation: fade-up 2.4s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    @keyframes fade-up {
+      0%  { opacity:0; transform:translateY(8px); }
+      38% { opacity:1; transform:translateY(0); }
+      85% { opacity:1; }
+      100%{ opacity:0; }
+    }
+
+    /* ── GLASS ── */
+    .glass {
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+    .glass-header {
+      background: rgba(14,17,22,0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .glass-nav {
+      background: rgba(11,14,19,0.82);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ── COLORS ── */
+    .text-main { color: var(--txt); }
+    .text-sub  { color: var(--txt-sub); }
+    .accent    { color: var(--accent); }
+
+    .btn-accent {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-bd);
+      color: var(--accent);
+      font-weight: 500;
+      transition: all 0.16s;
+    }
+    .btn-accent:active { transform: scale(0.97); opacity: 0.80; }
+
+    input, select, textarea {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: var(--txt);
+      border-radius: 10px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-bd);
+      background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 3px rgba(110,192,168,0.10);
+    }
+    input::placeholder, textarea::placeholder { color: var(--txt-sub); }
+    select option { background: #141820; color: var(--txt); }
+
+    /* ── TABS ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── NAV ── */
+    .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 4px; cursor:pointer; transition:color 0.14s; color:rgba(255,255,255,0.25); }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn svg { transition: transform 0.14s; }
+    .nav-btn.active svg { transform: scale(1.08); }
+
+    /* ── MODAL ── */
+    .modal-sheet {
+      background: rgba(16,20,26,0.92);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border-top: 1px solid rgba(255,255,255,0.09);
+    }
+
+    /* ── RECORD BTN ── */
+    .btn-record {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(239,68,68,0.75);
+      border: 1px solid rgba(255,140,140,0.15);
+      box-shadow: 0 4px 20px rgba(239,68,68,0.28);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s; cursor: pointer;
+    }
+    .btn-record:active { transform: scale(0.95); }
+    .btn-record.recording { animation: pulse-rec 1.6s ease-out infinite; }
+    @keyframes pulse-rec {
+      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.35), 0 4px 20px rgba(239,68,68,0.28); }
+      70%  { box-shadow: 0 0 0 16px rgba(239,68,68,0), 0 4px 20px rgba(239,68,68,0.28); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0), 0 4px 20px rgba(239,68,68,0.28); }
+    }
+
+    .section-label { font-size:0.6rem; font-weight:600; letter-spacing:0.10em; text-transform:uppercase; color:var(--txt-sub); }
+
+    /* Status */
+    .dot-done    { width:7px; height:7px; border-radius:50%; background:#4ade80; }
+    .dot-error   { width:7px; height:7px; border-radius:50%; background:#f87171; }
+    .dot-pending { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:blink 1.6s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  </style>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="splash-card">
+    <svg width="72" height="72" viewBox="0 0 24 24" fill="#c2784a">
+      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+    </svg>
+  </div>
+  <div class="splash-title">plaud-local</div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app" style="padding-bottom:80px">
+
+  <!-- HEADER -->
+  <header class="glass-header px-5 py-4 sticky top-0 z-20 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(110,192,168,0.15);border:1px solid rgba(110,192,168,0.22)">
+        <svg class="w-4 h-4" style="color:#6ec0a8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </div>
+      <span id="header-title" class="font-medium text-main text-sm tracking-wide">plaud-local</span>
+    </div>
+  </header>
+
+  <!-- ── TAB: ACCUEIL ── -->
+  <div id="tab-home" class="tab-content active px-4 py-6 max-w-lg mx-auto">
+    <h2 class="font-semibold text-main text-lg mb-4">Derniers RDV</h2>
+    <div id="home-meetings" class="space-y-3"></div>
+    <div id="home-empty" class="hidden text-center py-16">
+      <p class="text-sub text-sm">Aucun RDV pour le moment.</p>
+      <button onclick="switchTab('record')" class="btn-accent mt-4 px-5 py-2.5 rounded-full text-sm font-medium inline-block">Enregistrer mon premier RDV</button>
+    </div>
+  </div>
+
+  <!-- ── TAB: ENREGISTREMENT ── -->
+  <div id="tab-record" class="tab-content px-4 py-6 max-w-sm mx-auto">
+    <div class="space-y-3 mb-8">
+      <select id="rec-project" class="w-full rounded-xl px-4 py-3 text-sm">
+        <option value="">Sélectionner un projet...</option>
+      </select>
+      <input id="rec-title" type="text" placeholder="Titre du RDV (optionnel)" class="w-full rounded-xl px-4 py-3 text-sm">
+    </div>
+
+    <div class="flex flex-col items-center gap-5">
+      <button id="btn-record" class="btn-record" onclick="toggleRecord()">
+        <svg id="rec-icon-mic" class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+        <svg id="rec-icon-stop" class="w-7 h-7 text-white hidden" fill="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="6" width="12" height="12" rx="2"/>
+        </svg>
+      </button>
+      <div id="rec-timer" class="text-2xl font-light text-main tracking-widest hidden">00:00</div>
+      <div id="rec-status" class="text-sub text-sm">Appuyez pour démarrer</div>
+      <div id="rec-vol" class="hidden w-40 h-1.5 bg-white/50 rounded-full overflow-hidden">
+        <div id="rec-vol-fill" class="h-full rounded-full transition-all duration-75" style="width:0%;background:#dc2626/70"></div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 mt-8">
+      <p class="section-label text-center mb-3">Ou importer un fichier</p>
+      <label class="flex items-center justify-center gap-2 cursor-pointer group">
+        <svg class="w-4 h-4 accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <span class="accent text-sm font-medium">MP3 · WAV · M4A</span>
+        <input id="rec-file" type="file" accept="audio/*" class="hidden" onchange="handleFile(event)">
+      </label>
+      <div id="rec-file-name" class="text-sub text-xs text-center mt-2"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: CLIENTS ── -->
+  <div id="tab-clients" class="tab-content px-4 py-6 max-w-lg mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-main text-lg">Clients</h2>
+      <button onclick="openModal('modal-new-client')" class="accent text-sm font-medium">+ Nouveau</button>
+    </div>
+    <div id="clients-list" class="space-y-3"></div>
+    <div id="clients-empty" class="hidden text-center py-12">
+      <p class="text-sub text-sm">Aucun client.</p>
+    </div>
+  </div>
+
+  <!-- ── TAB: NOUVEAU ── -->
+  <div id="tab-new" class="tab-content px-4 py-6 max-w-lg mx-auto space-y-4">
+    <h2 class="font-semibold text-main text-lg mb-2">Créer</h2>
+
+    <div class="glass rounded-2xl p-5 space-y-3">
+      <p class="section-label">Nouveau client</p>
+      <input id="new-client-name" type="text" placeholder="Nom *" class="w-full rounded-xl px-4 py-3 text-sm">
+      <input id="new-client-company" type="text" placeholder="Entreprise" class="w-full rounded-xl px-4 py-3 text-sm">
+      <input id="new-client-email" type="email" placeholder="Email" class="w-full rounded-xl px-4 py-3 text-sm">
+      <button onclick="createClientFromTab()" class="w-full btn-accent py-3 rounded-xl text-sm font-medium">Créer le client</button>
+    </div>
+
+    <div class="glass rounded-2xl p-5 space-y-3">
+      <p class="section-label">Nouveau projet</p>
+      <select id="new-proj-client" class="w-full rounded-xl px-4 py-3 text-sm">
+        <option value="">Choisir un client *</option>
+      </select>
+      <input id="new-proj-name" type="text" placeholder="Nom du projet *" class="w-full rounded-xl px-4 py-3 text-sm">
+      <input id="new-proj-desc" type="text" placeholder="Description (optionnel)" class="w-full rounded-xl px-4 py-3 text-sm">
+      <button onclick="createProjectFromTab()" class="w-full btn-accent py-3 rounded-xl text-sm font-medium">Créer le projet</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="glass-nav fixed bottom-0 left-0 right-0 z-20 flex safe-bottom" style="padding-bottom: env(safe-area-inset-bottom)">
+  <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <span style="font-size:0.6rem">Accueil</span>
+  </button>
+  <button class="nav-btn" id="nav-record" onclick="switchTab('record')">
+    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    <span style="font-size:0.6rem">Rec</span>
+  </button>
+  <button class="nav-btn" id="nav-clients" onclick="switchTab('clients')">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    <span style="font-size:0.6rem">Clients</span>
+  </button>
+  <button class="nav-btn" id="nav-new" onclick="switchTab('new')">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    <span style="font-size:0.6rem">Nouveau</span>
+  </button>
+</nav>
+
+<!-- MODAL nouveau client (depuis clients) -->
+<div id="modal-new-client" class="hidden fixed inset-0 z-50 flex items-end">
+  <div class="absolute inset-0 bg-[#2d2010]/20" onclick="closeModal('modal-new-client')"></div>
+  <div class="modal-sheet rounded-t-3xl w-full p-6 space-y-3 relative z-10 max-w-lg mx-auto">
+    <div class="w-10 h-1 bg-[#c2784a]/30 rounded-full mx-auto mb-2"></div>
+    <p class="font-semibold text-main">Nouveau client</p>
+    <input id="mc-name" type="text" placeholder="Nom *" class="w-full rounded-xl px-4 py-3 text-sm">
+    <input id="mc-company" type="text" placeholder="Entreprise" class="w-full rounded-xl px-4 py-3 text-sm">
+    <div class="flex gap-3 pt-1">
+      <button onclick="closeModal('modal-new-client')" class="flex-1 glass py-3 rounded-xl text-sm text-sub">Annuler</button>
+      <button onclick="createClientModal()" class="flex-1 btn-accent py-3 rounded-xl text-sm font-medium">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL nouveau projet (depuis clients) -->
+<div id="modal-new-project" class="hidden fixed inset-0 z-50 flex items-end">
+  <div class="absolute inset-0 bg-[#2d2010]/20" onclick="closeModal('modal-new-project')"></div>
+  <div class="modal-sheet rounded-t-3xl w-full p-6 space-y-3 relative z-10 max-w-lg mx-auto">
+    <div class="w-10 h-1 bg-[#c2784a]/30 rounded-full mx-auto mb-2"></div>
+    <p class="font-semibold text-main">Nouveau projet</p>
+    <p id="mp-client-label" class="text-sub text-xs -mt-1"></p>
+    <input id="mp-name" type="text" placeholder="Nom du projet *" class="w-full rounded-xl px-4 py-3 text-sm">
+    <input id="mp-desc" type="text" placeholder="Description (optionnel)" class="w-full rounded-xl px-4 py-3 text-sm">
+    <input id="mp-client-id" type="hidden">
+    <div class="flex gap-3 pt-1">
+      <button onclick="closeModal('modal-new-project')" class="flex-1 glass py-3 rounded-xl text-sm text-sub">Annuler</button>
+      <button onclick="createProjectModal()" class="flex-1 btn-accent py-3 rounded-xl text-sm font-medium">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 glass px-5 py-3 rounded-full text-sm text-main shadow-lg z-50 whitespace-nowrap"></div>
+
+<script>
+// ── STATE ──
+let allClients = [];
+let mediaRecorder = null, audioChunks = [], timerInt = null, analyserInt = null, recSeconds = 0;
+
+// ── SPLASH ──
+setTimeout(() => {
+  document.getElementById('splash').classList.add('hide');
+  loadAll();
+}, 2600);
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  const titles = { home: 'plaud-local', record: 'Enregistrer', clients: 'Clients', new: 'Nouveau' };
+  document.getElementById('header-title').textContent = titles[name];
+  if (name === 'home') loadHome();
+  if (name === 'clients') loadClients();
+  if (name === 'record' || name === 'new') loadProjectSelects();
+}
+
+// ── LOAD ALL ──
+async function loadAll() {
+  const res = await fetch('/api/clients');
+  allClients = await res.json();
+  // Pre-load projects so getClientForMeeting works on home
+  await Promise.all(allClients.map(async c => {
+    const r = await fetch(`/api/clients/${c.id}/projects`);
+    c._projects = await r.json();
+  }));
+  loadHome();
+  loadProjectSelects();
+}
+
+// ── HOME — derniers RDV ──
+async function loadHome() {
+  const res = await fetch('/api/meetings');
+  const meetings = await res.json();
+  const el = document.getElementById('home-meetings');
+  const empty = document.getElementById('home-empty');
+  if (!meetings.length) { el.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  el.innerHTML = meetings.slice(0, 30).map(m => {
+    const client = getClientForMeeting(m);
+    const date = new Date(m.recorded_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' });
+    const dur = m.duration_seconds ? Math.round(m.duration_seconds/60)+'min' : '';
+    const dot = m.status === 'done' ? 'dot-done' : m.status === 'error' ? 'dot-error' : 'dot-pending';
+    return `
+      <a href="/meeting/${m.id}" class="glass rounded-2xl px-4 py-4 flex items-center gap-4 hover:opacity-80 transition-opacity">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold" style="background:rgba(110,192,168,0.15);border:1px solid rgba(110,192,168,0.22);color:#6ec0a8">
+          ${(client?.name || 'R').charAt(0).toUpperCase()}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-main text-sm truncate">${m.title || 'RDV'}</div>
+          <div class="text-sub text-xs mt-0.5">${client?.name || ''} · ${date}${dur ? ' · '+dur : ''}</div>
+        </div>
+        <div class="${dot} shrink-0"></div>
+      </a>`;
+  }).join('');
+}
+
+function getClientForMeeting(meeting) {
+  for (const c of allClients) {
+    if (c._projects) {
+      for (const p of c._projects) {
+        if (p.id === meeting.project_id) return c;
+      }
+    }
+  }
+  return null;
+}
+
+// ── CLIENTS TAB ──
+async function loadClients() {
+  const res = await fetch('/api/clients');
+  allClients = await res.json();
+  const el = document.getElementById('clients-list');
+  const empty = document.getElementById('clients-empty');
+  if (!allClients.length) { el.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  el.innerHTML = allClients.map(c => `
+    <div class="glass rounded-2xl overflow-hidden" id="client-card-${c.id}">
+      <div class="px-4 py-4 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold shrink-0" style="background:rgba(110,192,168,0.13);border:1px solid rgba(110,192,168,0.20);color:#6ec0a8">
+          ${c.name.charAt(0).toUpperCase()}
+        </div>
+        <div class="flex-1 min-w-0 cursor-pointer" onclick="toggleClientProjects(${c.id})">
+          <div class="font-medium text-main text-sm">${c.name}</div>
+          ${c.company ? `<div class="text-sub text-xs">${c.company}</div>` : ''}
+        </div>
+        <button onclick="confirmDelete('client',${c.id},'${c.name.replace(/'/g,"\\'")}','client-card-${c.id}')" class="text-red-400 hover:text-red-600 p-1 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+        <svg onclick="toggleClientProjects(${c.id})" id="chev-${c.id}" class="w-4 h-4 text-sub cursor-pointer transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+      <div id="projects-${c.id}" class="hidden border-t border-white/50 px-4 py-3 space-y-2">
+        <div id="proj-list-${c.id}"><p class="text-sub text-xs py-1">Chargement...</p></div>
+        <button onclick="openNewProjectModal(${c.id},'${c.name.replace(/'/g,"\\'")}') " class="accent text-xs font-medium hover:opacity-70">+ Nouveau projet</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleClientProjects(clientId) {
+  const el = document.getElementById(`projects-${clientId}`);
+  const chev = document.getElementById(`chev-${clientId}`);
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden');
+    chev.style.transform = 'rotate(180deg)';
+    await loadProjectsForClient(clientId);
+  } else {
+    el.classList.add('hidden');
+    chev.style.transform = '';
+  }
+}
+
+async function loadProjectsForClient(clientId) {
+  const res = await fetch(`/api/clients/${clientId}/projects`);
+  const projects = await res.json();
+  const c = allClients.find(c => c.id === clientId);
+  if (c) c._projects = projects;
+
+  const el = document.getElementById(`proj-list-${clientId}`);
+  if (!projects.length) { el.innerHTML = '<p class="text-sub text-xs">Aucun projet.</p>'; return; }
+
+  el.innerHTML = projects.map(p => `
+    <div class="rounded-xl px-3 py-2 space-y-1" style="background:rgba(194,120,74,0.07);border:1px solid rgba(194,120,74,0.15)" id="proj-card-${p.id}">
+      <div class="flex items-center justify-between">
+        <div class="font-medium text-main text-xs">${p.name}</div>
+        <div class="flex items-center gap-2">
+          <button onclick="recordForProject(${p.id})" class="text-red-500 text-xs font-medium flex items-center gap-1">
+            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>RDV
+          </button>
+          <button onclick="confirmDelete('project',${p.id},'${p.name.replace(/'/g,"\\'")}','proj-card-${p.id}',${clientId})" class="text-red-400 hover:text-red-600 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="meetings-proj-${p.id}" class="space-y-1"></div>
+      <button onclick="loadMeetingsForProject(${p.id})" class="text-sub text-xs hover:opacity-70">Voir les RDV →</button>
+    </div>
+  `).join('');
+}
+
+async function loadMeetingsForProject(projectId) {
+  const res = await fetch(`/api/meetings?project_id=${projectId}`);
+  const meetings = await res.json();
+  const el = document.getElementById(`meetings-proj-${projectId}`);
+  if (!meetings.length) { el.innerHTML = '<p class="text-sub text-xs">Aucun RDV.</p>'; return; }
+  el.innerHTML = meetings.map(m => {
+    const date = new Date(m.recorded_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+    const dot = m.status==='done'?'dot-done':m.status==='error'?'dot-error':'dot-pending';
+    return `<a href="/meeting/${m.id}" class="flex items-center justify-between py-0.5 hover:opacity-70">
+      <span class="text-main text-xs">${m.title||'RDV '+date}</span>
+      <div class="${dot}"></div>
+    </a>`;
+  }).join('');
+}
+
+// ── DELETE ──
+async function confirmDelete(type, id, name, cardId, parentId=null) {
+  if (!confirm(`Supprimer "${name}" ?`)) return;
+  let url = type === 'client' ? `/api/clients/${id}`
+          : type === 'project' ? `/api/clients/${parentId}/projects/${id}`
+          : `/api/meetings/${id}`;
+  await fetch(url, { method: 'DELETE' });
+  document.getElementById(cardId)?.remove();
+  showToast('Supprimé');
+}
+
+// ── PROJECT SELECTS ── (uses cached _projects, no extra fetch)
+function loadProjectSelects() {
+  const selectors = ['rec-project', 'new-proj-client'];
+  for (const selId of selectors) {
+    const sel = document.getElementById(selId);
+    if (!sel) continue;
+    const isClient = selId === 'new-proj-client';
+    sel.innerHTML = `<option value="">${isClient ? 'Choisir un client...' : 'Sélectionner un projet...'}</option>`;
+    if (isClient) {
+      allClients.forEach(c => {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+      });
+    } else {
+      for (const c of allClients) {
+        const projs = c._projects || [];
+        if (!projs.length) continue;
+        const g = document.createElement('optgroup'); g.label = c.name;
+        projs.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; g.appendChild(o); });
+        sel.appendChild(g);
+      }
+    }
+  }
+}
+
+// ── CREATE CLIENT ──
+async function createClientFromTab() {
+  const name = document.getElementById('new-client-name').value.trim();
+  if (!name) { showToast('Nom requis'); return; }
+  await fetch('/api/clients', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, company: document.getElementById('new-client-company').value.trim()||null, email: document.getElementById('new-client-email').value.trim()||null }) });
+  ['new-client-name','new-client-company','new-client-email'].forEach(id => document.getElementById(id).value='');
+  showToast('Client créé !');
+  await loadAll();
+}
+
+async function createClientModal() {
+  const name = document.getElementById('mc-name').value.trim();
+  if (!name) return;
+  await fetch('/api/clients', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, company: document.getElementById('mc-company').value.trim()||null }) });
+  closeModal('modal-new-client');
+  ['mc-name','mc-company'].forEach(id => document.getElementById(id).value='');
+  showToast('Client créé !');
+  await loadClients();
+  await loadProjectSelects();
+}
+
+// ── CREATE PROJECT ──
+async function createProjectFromTab() {
+  const clientId = document.getElementById('new-proj-client').value;
+  const name = document.getElementById('new-proj-name').value.trim();
+  if (!clientId || !name) { showToast('Client et nom requis'); return; }
+  await fetch(`/api/clients/${clientId}/projects`, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, description: document.getElementById('new-proj-desc').value.trim()||null }) });
+  ['new-proj-name','new-proj-desc'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('new-proj-client').value = '';
+  showToast('Projet créé !');
+  await loadProjectSelects();
+}
+
+// ── RECORDING ──
+async function toggleRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+  else await startRecording();
+}
+
+async function startRecording() {
+  if (!document.getElementById('rec-project').value) { showToast('Sélectionnez un projet'); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => uploadAudio(stream);
+    mediaRecorder.start(1000);
+    document.getElementById('btn-record').classList.add('recording');
+    document.getElementById('rec-icon-mic').classList.add('hidden');
+    document.getElementById('rec-icon-stop').classList.remove('hidden');
+    document.getElementById('rec-timer').classList.remove('hidden');
+    document.getElementById('rec-vol').classList.remove('hidden');
+    document.getElementById('rec-status').textContent = 'Enregistrement en cours...';
+    recSeconds = 0;
+    timerInt = setInterval(() => {
+      recSeconds++;
+      document.getElementById('rec-timer').textContent =
+        String(Math.floor(recSeconds/60)).padStart(2,'0')+':'+String(recSeconds%60).padStart(2,'0');
+    }, 1000);
+    const ctx = new AudioContext();
+    const src = ctx.createMediaStreamSource(stream);
+    const an = ctx.createAnalyser(); src.connect(an);
+    const d = new Uint8Array(an.frequencyBinCount);
+    analyserInt = setInterval(() => {
+      an.getByteFrequencyData(d);
+      const avg = d.reduce((a,b)=>a+b)/d.length;
+      document.getElementById('rec-vol-fill').style.width = Math.min(avg*2,100)+'%';
+    }, 80);
+  } catch { showToast('Accès au microphone refusé'); }
+}
+
+function stopRecording() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  clearInterval(timerInt); clearInterval(analyserInt);
+  document.getElementById('btn-record').classList.remove('recording');
+  document.getElementById('btn-record').disabled = true;
+  document.getElementById('btn-record').style.opacity = '0.5';
+  document.getElementById('rec-icon-stop').classList.add('hidden');
+  document.getElementById('rec-icon-mic').classList.remove('hidden');
+  document.getElementById('rec-vol').classList.add('hidden');
+  document.getElementById('rec-status').textContent = 'Envoi en cours...';
+}
+
+async function uploadAudio(stream) {
+  stream.getTracks().forEach(t => t.stop());
+  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+  const fd = new FormData();
+  fd.append('audio', blob, `rdv_${Date.now()}.webm`);
+  fd.append('project_id', document.getElementById('rec-project').value);
+  const title = document.getElementById('rec-title').value.trim();
+  if (title) fd.append('title', title);
+  try {
+    const res = await fetch('/api/meetings/upload', { method:'POST', body:fd });
+    const data = await res.json();
+    showToast('Envoyé — traitement en cours...');
+    setTimeout(() => window.location.href = `/meeting/${data.id}`, 1500);
+  } catch { showToast('Erreur lors de l\'envoi'); }
+}
+
+async function handleFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const projectId = document.getElementById('rec-project').value;
+  if (!projectId) { showToast('Sélectionnez un projet'); return; }
+  document.getElementById('rec-file-name').textContent = file.name;
+  const fd = new FormData();
+  fd.append('audio', file, file.name);
+  fd.append('project_id', projectId);
+  const title = document.getElementById('rec-title').value.trim();
+  if (title) fd.append('title', title);
+  try {
+    const res = await fetch('/api/meetings/upload', { method:'POST', body:fd });
+    const data = await res.json();
+    showToast('Fichier envoyé — traitement en cours...');
+    setTimeout(() => window.location.href = `/meeting/${data.id}`, 1500);
+  } catch { showToast('Erreur lors de l\'upload'); }
+}
+
+// ── RECORD FOR PROJECT ──
+function recordForProject(projectId) {
+  switchTab('record');
+  document.getElementById('rec-project').value = projectId;
+}
+
+// ── NEW PROJECT MODAL ──
+function openNewProjectModal(clientId, clientName) {
+  document.getElementById('mp-client-id').value = clientId;
+  document.getElementById('mp-client-label').textContent = 'Client : ' + clientName;
+  document.getElementById('mp-name').value = '';
+  document.getElementById('mp-desc').value = '';
+  openModal('modal-new-project');
+}
+
+async function createProjectModal() {
+  const clientId = document.getElementById('mp-client-id').value;
+  const name = document.getElementById('mp-name').value.trim();
+  if (!name) { showToast('Nom requis'); return; }
+  await fetch(`/api/clients/${clientId}/projects`, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, description: document.getElementById('mp-desc').value.trim()||null }) });
+  closeModal('modal-new-project');
+  showToast('Projet créé !');
+  // Refresh cached projects and re-render
+  const c = allClients.find(c => c.id === Number(clientId));
+  if (c) {
+    const r = await fetch(`/api/clients/${clientId}/projects`);
+    c._projects = await r.json();
+    await loadProjectsForClient(Number(clientId));
+  }
+  loadProjectSelects();
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ── TOAST ──
+let toastTimeout;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.remove('hidden');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => el.classList.add('hidden'), 2800);
+}
+</script>
+</body>
+</html>

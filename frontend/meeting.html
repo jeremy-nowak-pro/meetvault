@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RDV — plaud-local</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
+    :root {
+      --accent:     #6ec0a8;
+      --accent-dim: rgba(110,192,168,0.14);
+      --accent-bd:  rgba(110,192,168,0.22);
+      --bg:         #0e1116;
+      --card:       rgba(255,255,255,0.055);
+      --card-bd:    rgba(255,255,255,0.08);
+      --txt:        rgba(255,255,255,0.88);
+      --txt-sub:    rgba(255,255,255,0.36);
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 65% 50% at 0% 0%,    rgba(40,60,80,0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(30,50,65,0.35) 0%, transparent 50%),
+        var(--bg);
+      background-attachment: fixed;
+    }
+
+    .glass {
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .glass-header {
+      background: rgba(14,17,22,0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* Sections — même glass, juste un pip coloré via border-left */
+    .glass-accent {
+      background: var(--card);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      border-left: 2px solid rgba(110,192,168,0.50);
+    }
+    .glass-green {
+      background: var(--card);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      border-left: 2px solid rgba(74,222,128,0.50);
+    }
+    .glass-blue {
+      background: var(--card);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      border-left: 2px solid rgba(96,165,250,0.50);
+    }
+    .glass-yellow {
+      background: var(--card);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-bd);
+      border-left: 2px solid rgba(250,204,21,0.45);
+    }
+
+    .modal-sheet {
+      background: rgba(14,17,22,0.93);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .text-main { color: var(--txt); }
+    .text-sub  { color: var(--txt-sub); }
+    .accent    { color: var(--accent); }
+
+    input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: var(--txt);
+      border-radius: 10px;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent-bd);
+      background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 3px rgba(110,192,168,0.10);
+    }
+    input::placeholder { color: var(--txt-sub); }
+
+    .section-label {
+      font-size: 0.60rem;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--txt-sub);
+    }
+
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.open { transform: rotate(180deg); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+<body>
+
+  <header class="glass-header px-5 py-4 flex items-center justify-between sticky top-0 z-20">
+    <div class="flex items-center gap-3">
+      <a href="/" class="w-8 h-8 glass rounded-full flex items-center justify-center text-sub hover:opacity-70 transition-opacity shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div class="min-w-0">
+        <div id="meeting-title" class="font-semibold text-main text-sm truncate">Chargement...</div>
+        <div id="meeting-meta" class="text-sub text-xs"></div>
+      </div>
+    </div>
+    <button onclick="exportMarkdown()" class="text-sub text-xs font-medium hover:accent transition-colors flex items-center gap-1">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Exporter
+    </button>
+  </header>
+
+  <!-- Pipeline status -->
+  <div id="status-bar" class="hidden px-5 py-3 flex items-center gap-3" style="background:rgba(110,192,168,0.08);border-bottom:1px solid rgba(110,192,168,0.14)">
+    <div class="spinner w-4 h-4 border-2 rounded-full shrink-0" style="border-color:rgba(110,192,168,0.20);border-top-color:#6ec0a8"></div>
+    <span id="status-text" class="text-xs font-medium" style="color:#6ec0a8"></span>
+  </div>
+  <div id="error-bar" class="hidden px-5 py-3" style="background:rgba(248,113,113,0.08);border-bottom:1px solid rgba(248,113,113,0.14)">
+    <span id="error-text" class="text-xs" style="color:#f87171"></span>
+  </div>
+
+  <main class="max-w-lg mx-auto px-4 py-6 space-y-4" id="main-content">
+    <div class="text-center py-20 text-sub text-sm">Chargement...</div>
+  </main>
+
+  <!-- Modal locuteurs -->
+  <div id="modal-speakers" class="hidden fixed inset-0 z-50 flex items-end">
+    <div class="absolute inset-0 bg-[#2d2010]/20" onclick="closeSpeakers()"></div>
+    <div class="modal-sheet rounded-t-3xl w-full p-6 space-y-4 relative z-10 max-w-lg mx-auto">
+      <div class="w-10 h-1 bg-[#c2784a]/30 rounded-full mx-auto mb-1"></div>
+      <h3 class="font-semibold text-main text-base">Nommer les interlocuteurs</h3>
+      <p class="text-sub text-xs">Donnez un nom à chaque voix pour affiner l'analyse.</p>
+      <div id="speaker-inputs" class="space-y-3"></div>
+      <div class="flex gap-3 pt-1">
+        <button onclick="closeSpeakers()" class="flex-1 glass py-3 rounded-xl text-sm font-medium" style="color:rgba(255,255,255,0.45)">Annuler</button>
+        <button onclick="saveSpeakers()" class="flex-1 py-3 rounded-xl text-sm font-medium" style="background:rgba(110,192,168,0.18);border:1px solid rgba(110,192,168,0.28);color:#6ec0a8">Enregistrer & relancer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const meetingId = window.location.pathname.split('/').pop();
+    let pollInterval = null;
+    let meetingData = null;
+
+    const statusLabels = {
+      uploaded: 'En file d\'attente...',
+      transcribing: 'Transcription Whisper en cours...',
+      diarizing: 'Identification des interlocuteurs...',
+      analyzing: 'Analyse IA Ollama en cours...',
+    };
+
+    async function loadMeeting() {
+      const res = await fetch(`/api/meetings/${meetingId}`);
+      meetingData = await res.json();
+      render(meetingData);
+      if (!['done', 'error'].includes(meetingData.status)) {
+        if (!pollInterval) pollInterval = setInterval(loadMeeting, 3000);
+      } else {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    function render(m) {
+      document.getElementById('meeting-title').textContent = m.title || 'RDV';
+      const date = new Date(m.recorded_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const dur = m.duration_seconds ? `${Math.round(m.duration_seconds / 60)} min` : '';
+      document.getElementById('meeting-meta').textContent = [date, dur].filter(Boolean).join(' · ');
+
+      const label = statusLabels[m.status];
+      document.getElementById('status-bar').classList.toggle('hidden', !label);
+      if (label) document.getElementById('status-text').textContent = label;
+
+      document.getElementById('error-bar').classList.toggle('hidden', m.status !== 'error');
+      if (m.status === 'error') document.getElementById('error-text').textContent = '⚠ ' + (m.error_message || 'Erreur inconnue');
+
+      if (m.status !== 'done') return;
+
+      const a = m.analysis || {};
+      const speakers = m.speakers || {};
+      const transcript = m.transcript || [];
+
+      document.getElementById('main-content').innerHTML = `
+
+        ${a.summary ? `
+        <div class="glass rounded-2xl p-5">
+          <p class="section-label mb-2">Résumé</p>
+          <p class="text-main text-sm leading-relaxed">${a.summary}</p>
+        </div>` : ''}
+
+        ${card('Demandes client', a.client_requests, renderCheckItem, 'glass-accent')}
+        ${card('Validé par le client', a.client_validations, renderValidation, 'glass-green')}
+        ${card('Questions / Réponses', a.questions_answers, renderQA, 'glass-blue')}
+        ${card('Tes engagements', a.jeremy_commitments, renderCheckItem, 'glass-accent')}
+        ${card('Points en suspens', a.pending_points, renderPending, 'glass-yellow')}
+
+        ${a.next_step ? `
+        <div class="glass-blue rounded-2xl p-5">
+          <p class="section-label mb-2">Prochaine étape</p>
+          <p class="text-main text-sm">${a.next_step}</p>
+        </div>` : ''}
+
+        <!-- Locuteurs -->
+        <div class="glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <p class="section-label">Interlocuteurs</p>
+            <button onclick="openSpeakers()" class="accent text-xs font-medium hover:opacity-70 transition-opacity">Nommer →</button>
+          </div>
+          <div class="space-y-2">${renderSpeakers(speakers, transcript)}</div>
+        </div>
+
+        <!-- Transcription -->
+        <div class="glass rounded-2xl overflow-hidden">
+          <button onclick="toggleTranscript()" class="w-full px-5 py-4 flex items-center justify-between">
+            <p class="section-label">Transcription complète</p>
+            <svg id="transcript-chevron" class="chevron w-4 h-4 text-[#c2784a]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div id="transcript-body" class="hidden px-5 pb-5 space-y-1 max-h-96 overflow-y-auto border-t border-white/50">
+            <div class="pt-3">${renderTranscript(transcript, speakers)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function card(title, items, renderFn, glassClass) {
+      if (!items || !items.length) return '';
+      return `
+        <div class="${glassClass} rounded-2xl p-5">
+          <p class="section-label mb-3">${title}</p>
+          <div class="space-y-3">${items.map(renderFn).join('')}</div>
+        </div>`;
+    }
+
+    function renderCheckItem(item) {
+      const done = item.done;
+      return `<div class="flex items-start gap-3">
+        <span class="text-sm mt-0.5 shrink-0" style="color:${done ? '#6ec0a8' : 'rgba(255,255,255,0.22)'}">${done ? '✓' : '○'}</span>
+        <span class="text-sm" style="${done ? 'text-decoration:line-through;color:rgba(255,255,255,0.38)' : 'color:rgba(255,255,255,0.88)'}">${item.text}</span>
+      </div>`;
+    }
+
+    function renderValidation(item) {
+      return `<div class="flex items-start gap-3">
+        <span class="text-sm mt-0.5 shrink-0" style="color:#4ade80">✓</span>
+        <span class="text-sm" style="color:rgba(255,255,255,0.88)">${item.text}</span>
+      </div>`;
+    }
+
+    function renderQA(qa) {
+      const answered = qa.answered !== false;
+      return `<div class="space-y-1.5">
+        <div class="flex items-start gap-2">
+          <span class="text-sm shrink-0" style="color:rgba(140,170,255,0.80)">?</span>
+          <span class="text-sm font-medium" style="color:rgba(255,255,255,0.88)">${qa.question}</span>
+        </div>
+        <div class="ml-4 pl-2 border-l-2" style="border-color:${answered ? 'rgba(76,217,100,0.30)' : 'rgba(255,200,50,0.40)'}">
+          <p class="text-sm" style="color:${answered ? 'rgba(255,255,255,0.45)' : 'rgba(255,210,80,0.85)'}">
+            ${!answered ? '⚠ Non répondu — ' : ''}${qa.answer || ''}
+          </p>
+        </div>
+      </div>`;
+    }
+
+    function renderPending(item) {
+      return `<div class="flex items-start gap-3">
+        <span class="text-sm mt-0.5 shrink-0" style="color:rgba(255,200,50,0.80)">⏳</span>
+        <span class="text-sm" style="color:rgba(255,255,255,0.88)">${item.text}</span>
+      </div>`;
+    }
+
+    function renderSpeakers(speakers, transcript) {
+      const ids = [...new Set(transcript.map(s => s.speaker))];
+      if (!ids.length) return '<p class="text-sub text-xs">Aucun interlocuteur détecté.</p>';
+      return ids.map(id => {
+        const name = speakers[id] || id.replace('SPEAKER_0', 'Interlocuteur ');
+        return `<div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style="background:rgba(110,192,168,0.15);border:1px solid rgba(110,192,168,0.22);color:#6ec0a8">${name.charAt(0).toUpperCase()}</div>
+          <span class="text-sm" style="color:rgba(255,255,255,0.88)">${name}</span>
+          ${speakers[id] ? '' : `<span class="text-xs" style="color:rgba(255,255,255,0.30)">(${id})</span>`}
+        </div>`;
+      }).join('');
+    }
+
+    function renderTranscript(transcript, speakers) {
+      if (!transcript.length) return '<p class="text-sub text-sm">Transcription indisponible.</p>';
+      let prev = null;
+      const speakerColors = {};
+      const palette = ['rgba(110,192,168,0.90)', 'rgba(74,222,128,0.80)', 'rgba(96,165,250,0.80)', 'rgba(250,204,21,0.75)'];
+      let ci = 0;
+      return transcript.map(seg => {
+        const raw = seg.speaker || 'SPEAKER_00';
+        if (!speakerColors[raw]) speakerColors[raw] = palette[ci++ % palette.length];
+        const name = (speakers && speakers[raw]) || raw.replace('SPEAKER_0', 'Interlocuteur ');
+        const time = fmtTime(seg.start);
+        let out = '';
+        if (name !== prev) {
+          out += `<div class="flex items-center gap-2 pt-4 pb-1">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style="background:rgba(255,255,255,0.10);color:${speakerColors[raw]};border:1px solid rgba(255,255,255,0.14)">${name.charAt(0).toUpperCase()}</div>
+            <span class="text-xs font-semibold" style="color:${speakerColors[raw]}">${name}</span>
+            <span class="text-xs" style="color:rgba(255,255,255,0.30)">${time}</span>
+          </div>`;
+          prev = name;
+        }
+        out += `<p class="text-sm leading-relaxed pl-7" style="color:rgba(255,255,255,0.72)">${seg.text}</p>`;
+        return out;
+      }).join('');
+    }
+
+    function fmtTime(s) {
+      return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+    }
+
+    function toggleTranscript() {
+      const body = document.getElementById('transcript-body');
+      const chevron = document.getElementById('transcript-chevron');
+      body.classList.toggle('hidden');
+      chevron.classList.toggle('open', !body.classList.contains('hidden'));
+    }
+
+    function openSpeakers() {
+      const ids = [...new Set((meetingData.transcript || []).map(s => s.speaker))];
+      const speakers = meetingData.speakers || {};
+      document.getElementById('speaker-inputs').innerHTML = ids.map(id => `
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-[#c2784a] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+            ${(speakers[id] || id).charAt(0).toUpperCase()}
+          </div>
+          <div class="flex-1">
+            <div class="text-sub text-xs mb-1">${id}</div>
+            <input type="text" id="spk-${id}" value="${speakers[id] || ''}" placeholder="Prénom ou rôle"
+              class="w-full rounded-xl px-3 py-2 text-sm">
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('modal-speakers').classList.remove('hidden');
+    }
+
+    function closeSpeakers() { document.getElementById('modal-speakers').classList.add('hidden'); }
+
+    async function saveSpeakers() {
+      const ids = [...new Set((meetingData.transcript || []).map(s => s.speaker))];
+      const speakers = {};
+      ids.forEach(id => {
+        const val = document.getElementById(`spk-${id}`)?.value.trim();
+        if (val) speakers[id] = val;
+      });
+      await fetch(`/api/meetings/${meetingId}/speakers`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(speakers)
+      });
+      await fetch(`/api/meetings/${meetingId}/reanalyze`, { method: 'POST' });
+      closeSpeakers();
+      setTimeout(loadMeeting, 600);
+    }
+
+    async function exportMarkdown() {
+      const res = await fetch(`/api/meetings/${meetingId}/export`);
+      const md = await res.text();
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rdv_${meetingId}.md`;
+      a.click();
+    }
+
+    loadMeeting();
+  </script>
+</body>
+</html>

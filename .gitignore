@@ -1,0 +1,37 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Env
+.env
+
+# Database
+plaud.db
+*.db-shm
+*.db-wal
+
+# Audio storage
+storage/audio/
+
+# SSL / Tailscale certs
+*.pem
+*.crt
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

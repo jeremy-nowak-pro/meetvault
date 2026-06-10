@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\33638\\\\Documents\\\\Dev\\\\plaud-local\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\33638\\\\Documents\\\\Dev\\\\plaud-local\\\\memory\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Read(//c/Users/33638/Documents/Dev/**)",
+      "Bash(npx create-expo-app@latest plaud-native --template blank-typescript)",
+      "Bash(npx expo *)",
+      "Bash(npm install *)",
+      "Bash(dir \"C:\\\\Users\\\\33638\\\\Documents\\\\Dev\\\\plaud-native\")",
+      "Bash(dir \"C:\\\\Users\\\\33638\\\\Documents\\\\Dev\\\\plaud-local\")",
+      "Bash(findstr \".env\")",
+      "Bash(git init *)",
+      "Bash(git remote *)"
+    ]
+  }
+}
