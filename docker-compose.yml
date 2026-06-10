@@ -5,7 +5,7 @@ services:
       - "${PORT:-8000}:8000"
     volumes:
       - ./storage:/app/storage
-      - ./plaud.db:/app/plaud.db
+      - ./data:/app/data
       - ./frontend:/app/frontend
     environment:
       - HF_TOKEN=${HF_TOKEN}
@@ -14,6 +14,7 @@ services:
       - PORT=${PORT:-8000}
       - STORAGE_DIR=/app/storage/audio
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/meetvault.db
     deploy:
       resources:
         reservations:
