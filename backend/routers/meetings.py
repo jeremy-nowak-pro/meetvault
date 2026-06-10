@@ -168,8 +168,7 @@ async def export_meeting(meeting_id: int, db: AsyncSession = Depends(get_db)):
 
 
 async def run_pipeline(meeting_id: int):
-    from backend.pipeline.transcriber import transcribe
-    from backend.pipeline.diarizer import diarize
+    from backend.pipeline.whisperx_pipeline import transcribe_and_diarize
     from backend.pipeline.analyzer import analyze
     from backend.pipeline.notifier import send_push_notification
     from backend.database import SessionLocal
@@ -177,20 +176,14 @@ async def run_pipeline(meeting_id: int):
     async with SessionLocal() as db:
         meeting = await db.get(Meeting, meeting_id)
         try:
-            # 1. Transcription
+            # 1. Transcription + alignement + diarisation (WhisperX)
             meeting.status = "transcribing"
             await db.commit()
-            transcript, duration = await transcribe(meeting.audio_path)
-            meeting.transcript_raw = json.dumps(transcript, ensure_ascii=False)
+            diarized, duration = await transcribe_and_diarize(meeting.audio_path)
+            meeting.transcript_diarized = json.dumps(diarized, ensure_ascii=False)
             meeting.duration_seconds = int(duration)
 
-            # 2. Diarisation
-            meeting.status = "diarizing"
-            await db.commit()
-            diarized = await diarize(meeting.audio_path, transcript)
-            meeting.transcript_diarized = json.dumps(diarized, ensure_ascii=False)
-
-            # 3. Analyse
+            # 2. Analyse Ollama
             meeting.status = "analyzing"
             await db.commit()
             analysis = await analyze(diarized, meeting.speakers)
